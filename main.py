@@ -34,8 +34,11 @@ def execute_model_from_file(model_file: str) -> tuple[gp.Model, list]:
     log_output = output._stringio.getvalue().splitlines()
     
     # 顯示捕獲的日誌輸出到控制台
+    print('')
+    print("\n".join(["-"*80, "Gurobi Output Log", "-"*80]))
     for line in log_output:
         print(line)
+    print("-"*80 + "\n")
 
     return model, log_output
 
@@ -70,11 +73,8 @@ def save_to_excel(model: gp.Model, log_output: list, filename: str):
 
     df_info = pd.DataFrame(additional_info)
 
-    # 捕獲的日誌輸出
-    log_data = {
-        'Log': log_output
-    }
-    df_log = pd.DataFrame(log_data)
+    # 捕獲的日誌輸出，分段保存
+    df_log = pd.DataFrame({'Log': log_output})
 
     # 創建或加載 Excel 文件並寫入數據
     with pd.ExcelWriter(filename, engine='openpyxl') as writer:
