@@ -43,7 +43,9 @@ def execute_model_from_file(model_file: str) -> tuple[gp.Model, list]:
 
 def save_to_excel(results: dict, filename: str) -> None:
     with pd.ExcelWriter(filename, engine='openpyxl') as writer:
-        for model_name, (model, log_output) in results.items():
+        model_info_data = {'Model Number': [], 'Model File': []}
+        
+        for idx, (model_name, (model, log_output)) in enumerate(results.items(), start=1):
             # 準備變數和值數據
             data = {
                 'Variable': [],
@@ -77,11 +79,17 @@ def save_to_excel(results: dict, filename: str) -> None:
             # 捕獲的日誌輸出，分段保存
             df_log = pd.DataFrame({'Log': log_output})
 
-            model_name_short = model_name[:10]  # 限制名稱長度
+            model_info_data['Model Number'].append(idx)
+            model_info_data['Model File'].append(model_name)
+
             # 寫入數據到不同的工作表
-            df.to_excel(writer, sheet_name=f'{model_name_short}_Solution', index=False)
-            df_info.to_excel(writer, sheet_name=f'{model_name_short}_Info', index=False)
-            df_log.to_excel(writer, sheet_name=f'{model_name_short}_Log', index=False)
+            df.to_excel(writer, sheet_name=f'Model_{idx}_Solution', index=False)
+            df_info.to_excel(writer, sheet_name=f'Model_{idx}_Info', index=False)
+            df_log.to_excel(writer, sheet_name=f'Model_{idx}_Log', index=False)
+
+        # 寫入模型編號和文件名對應表
+        df_model_info = pd.DataFrame(model_info_data)
+        df_model_info.to_excel(writer, sheet_name='Model_Index', index=False)
 
 def main():
     # 建立主窗口
@@ -97,28 +105,28 @@ def main():
         frame = tk.Frame(root, padx=10, pady=5)
         frame.grid(row=len(file_entries) + 2, column=0, sticky=tk.W, columnspan=3)
         
-        model_file = tk.StringVar()
-        file_entries.append(model_file)
+        model_files = tk.StringVar()
+        file_entries.append(model_files)
 
         label = tk.Label(frame, text="模型文件路徑:")
         label.grid(row=0, column=0, sticky=tk.W)
 
-        entry = tk.Entry(frame, textvariable=model_file, width=50)
+        entry = tk.Entry(frame, textvariable=model_files, width=50)
         entry.grid(row=0, column=1, padx=5, pady=5)
 
-        button_browse = tk.Button(frame, text="瀏覽...", command=lambda: select_file(model_file))
+        button_browse = tk.Button(frame, text="瀏覽...", command=lambda: select_files(model_files))
         button_browse.grid(row=0, column=2, padx=5, pady=5)
 
     # 文件選擇函數
-    def select_file(model_file):
-        file_path = filedialog.askopenfilename(filetypes=[("Model Files", "*.lp *.mps *.json")])
-        if file_path:
-            model_file.set(file_path)
+    def select_files(model_files):
+        file_paths = filedialog.askopenfilenames(filetypes=[("Model Files", "*.lp *.mps *.json")])
+        if file_paths:
+            model_files.set(";".join(file_paths))
 
     # 執行模型求解
     def solve_models():
         try:
-            model_file_paths = [entry.get() for entry in file_entries if entry.get()]
+            model_file_paths = [path for entry in file_entries for path in entry.get().split(";") if entry.get()]
             if not model_file_paths:
                 messagebox.showwarning("Warning", "請選擇至少一個模型文件")
                 return
@@ -167,8 +175,6 @@ def main():
     result_text = tk.StringVar()
 
     # 建立UI元件
-    
-
     result_label = tk.Label(root, textvariable=result_text, justify=tk.LEFT)
     result_label.grid(row=0, column=0, columnspan=3)
 
