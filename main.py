@@ -10,19 +10,23 @@ class CaptureOutput(list):
     """Class to capture stdout and stderr."""
     def __enter__(self):
         self._stdout = sys.stdout
-        self._stderr = sys.stderr
-        sys.stdout = self._stringio = io.StringIO()
-        sys.stderr = self._stringio
+        self._stderr = self._stderr = io.StringIO()
+        sys.stdout = self._stderr
+        sys.stderr = self._stderr
         return self
 
     def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
+        self.extend(self._stderr.getvalue().splitlines())
         sys.stdout = self._stdout
         sys.stderr = self._stderr
 
-def execute_model_from_file(model_file: str) -> tuple[gp.Model, list]:
+def execute_model_from_file(model_file: str, time_limit: float) -> tuple[gp.Model, list]:
     # 從文件讀取模型
     model = gp.read(model_file)
+
+    # 設置最大執行時間
+    if time_limit > 0:
+        model.setParam(GRB.Param.TimeLimit, time_limit)
 
     # 捕獲 Gurobi 的日誌輸出
     with CaptureOutput() as output:
@@ -30,8 +34,8 @@ def execute_model_from_file(model_file: str) -> tuple[gp.Model, list]:
         model.optimize()
         model.printStats()
 
-    log_output = output._stringio.getvalue().splitlines()
-    
+    log_output = output._stderr.getvalue().splitlines()
+
     # 顯示捕獲的日誌輸出到控制台
     print('')
     print("\n".join(["-"*80, "Gurobi Output Log", "-"*80]))
@@ -103,7 +107,7 @@ def main():
 
     def add_file_entry():
         frame = tk.Frame(root, padx=10, pady=5)
-        frame.grid(row=len(file_entries) + 2, column=0, sticky=tk.W, columnspan=3)
+        frame.grid(row=len(file_entries) + 3, column=0, sticky=tk.W, columnspan=3)
         
         model_files = tk.StringVar()
         file_entries.append(model_files)
@@ -133,9 +137,11 @@ def main():
 
             results.clear()
 
+            time_limit = float(time_limit_var.get())
+
             for file_path in model_file_paths:
                 model_name = file_path.split("/")[-1]
-                model, log_output = execute_model_from_file(file_path)
+                model, log_output = execute_model_from_file(file_path, time_limit)
                 results[model_name] = (model, log_output)
             
             if all(model.status == GRB.OPTIMAL for model, _ in results.values()):
@@ -178,14 +184,22 @@ def main():
     result_label = tk.Label(root, textvariable=result_text, justify=tk.LEFT)
     result_label.grid(row=0, column=0, columnspan=3)
 
-    button_solve = tk.Button(root, text="求解模型", command=solve_models)
-    button_solve.grid(row=1, column=0)
+    time_limit_var = tk.StringVar(value="0")
 
-    save_button = tk.Button(root, text="保存結果到 Excel", command=save_result_to_excel, state=tk.DISABLED)
-    save_button.grid(row=1, column=1)
+    time_limit_label = tk.Label(root, text="最大執行時間 (秒，0表示不限制):")
+    time_limit_label.grid(row=1, column=0, sticky=tk.E, columnspan=2,)
+    
+    time_limit_entry = tk.Entry(root, textvariable=time_limit_var, width=10)
+    time_limit_entry.grid(row=1, column=2, sticky=tk.W)
 
     button_add_file = tk.Button(root, text="添加模型文件", command=add_file_entry)
-    button_add_file.grid(row=1, column=2)
+    button_add_file.grid(row=2, column=0)
+
+    button_solve = tk.Button(root, text="求解模型", command=solve_models)
+    button_solve.grid(row=2, column=1)
+
+    save_button = tk.Button(root, text="保存結果到 Excel", command=save_result_to_excel, state=tk.DISABLED)
+    save_button.grid(row=2, column=2)
 
     add_file_entry()  # 添加第一個文件輸入框
 
