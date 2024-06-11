@@ -170,7 +170,7 @@ def main():
 
             progress['value'] = 0
             progress['maximum'] = len(model_file_paths)
-            progress_label.config(text="0/0 (0.00%)")
+            progress_label.config(text=f"0/{len(model_file_paths)} (0.00%)")
             
             time_limit = float(time_limit_var.get())
 
