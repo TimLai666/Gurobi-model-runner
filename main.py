@@ -53,6 +53,11 @@ def execute_model_from_file(model_file: str, time_limit: float, temp_dir: str) -
         for v in model.getVars():
             f.write(f"{v.VarName}: {v.X}\n")
         f.write("\n".join(log_output))
+        # 添加附加信息
+        f.write(f"\nObjective Value: {model.ObjVal}\n")
+        f.write(f"Solve Time (seconds): {model.Runtime}\n")
+        f.write(f"Iterations: {model.IterCount}\n")
+        f.write(f"Node Count: {model.NodeCount}\n")
     
     return temp_file
 
@@ -64,18 +69,25 @@ def read_temp_files(temp_dir: str) -> dict:
             data = {
                 'Variable': [],
                 'Value': [],
-                'Log': []
+                'Log': [],
+                'Info': {}
             }
             with open(os.path.join(temp_dir, temp_file), 'r') as f:
                 lines = f.readlines()
                 is_log = False
                 for line in lines:
                     if is_log:
-                        data['Log'].append(line.strip())
+                        if ': ' in line:
+                            var_name, value = line.strip().split(': ')
+                            if var_name in ["Objective Value", "Solve Time (seconds)", "Iterations", "Node Count"]:
+                                data['Info'][var_name] = value
+                        else:
+                            data['Log'].append(line.strip())
                     elif ': ' in line:
                         var_name, value = line.strip().split(': ')
-                        data['Variable'].append(var_name)
-                        data['Value'].append(float(value))
+                        if var_name not in ["Objective Value", "Solve Time (seconds)", "Iterations", "Node Count"]:
+                            data['Variable'].append(var_name)
+                            data['Value'].append(float(value))
                     else:
                         is_log = True
             results[model_name] = data
@@ -101,18 +113,25 @@ def save_to_excel(results: dict, filename: str) -> None:
             # 捕獲的日誌輸出，分段保存
             df_log = pd.DataFrame({'Log': data['Log']})
 
+            # 準備附加信息
+            df_info = pd.DataFrame(list(data['Info'].items()), columns=['Info', 'Value'])
+
             model_info_data['Model Number'].append(idx)
             model_info_data['Model File'].append(model_name)
 
             # 寫入數據到不同的工作表
             df.to_excel(writer, sheet_name=f'Model_{idx}_Solution', index=False, startrow=1)
             df_log.to_excel(writer, sheet_name=f'Model_{idx}_Log', index=False, startrow=1)
+            df_info.to_excel(writer, sheet_name=f'Model_{idx}_Info', index=False, startrow=1)
 
             # 在工作表的第一行添加模型文件名
             sheet = writer.sheets[f'Model_{idx}_Solution']
             sheet.cell(row=1, column=1, value=f'Model File: {model_name}')
 
             sheet = writer.sheets[f'Model_{idx}_Log']
+            sheet.cell(row=1, column=1, value=f'Model File: {model_name}')
+
+            sheet = writer.sheets[f'Model_{idx}_Info']
             sheet.cell(row=1, column=1, value=f'Model File: {model_name}')
 
         # 寫入模型編號和文件名對應表
