@@ -147,6 +147,7 @@ def main():
 
     file_entries = []
     file_entry_widgets = []
+    browse_buttons = []
     solve_thread = None
     results = {}
     temp_dir = None
@@ -167,6 +168,7 @@ def main():
 
         button_browse = tk.Button(frame, text="瀏覽...", command=lambda: select_files(model_files))
         button_browse.grid(row=0, column=2, padx=5, pady=5)
+        browse_buttons.append(button_browse)
 
     # 文件選擇函數
     def select_files(model_files):
@@ -242,6 +244,8 @@ def main():
             widget.config(state=state)
         for entry in file_entry_widgets:
             entry.config(state=state)
+        for button in browse_buttons:
+            button.config(state=state)
         time_limit_entry.config(state=state)
 
     # 結果變數
