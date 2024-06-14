@@ -141,12 +141,12 @@ def main():
 
     def add_file_entry():
         frame = tk.Frame(root, padx=10, pady=5)
-        frame.grid(row=len(file_entries) + 6, column=0, sticky=tk.W, columnspan=4)
+        frame.grid(row=len(file_entries) + 6, column=0, sticky=tk.W, columnspan=5)
         
         model_files = tk.StringVar()
         file_entries.append(model_files)
 
-        label = tk.Label(frame, text="模型文件路徑:")
+        label = tk.Label(frame, text="模型檔案路徑:")
         label.grid(row=0, column=0, sticky=tk.W)
 
         entry = tk.Entry(frame, textvariable=model_files, width=50)
@@ -171,7 +171,7 @@ def main():
 
             model_file_paths = [path for entry in file_entries for path in entry.get().split(";") if entry.get()]
             if not model_file_paths:
-                messagebox.showwarning("Warning", "請選擇至少一個模型文件")
+                messagebox.showwarning("Warning", "請至少選擇一個模型檔案")
                 return
 
             toggle_buttons(state=tk.DISABLED)
@@ -200,7 +200,7 @@ def main():
                 result_text.set(result)
                 await asyncio.sleep(0)  # 让出控制权以保持GUI响应
 
-            current_model.set("所有模型已處理完畢，請記得存檔！")
+            current_model.set("所有模型皆已處理完畢，請記得存檔！")
             results['data'] = read_temp_files(temp_dir)
             toggle_buttons(state=tk.NORMAL)
             save_button.config(state=tk.NORMAL)
@@ -244,33 +244,33 @@ def main():
 
     # 建立UI元件
     current_model_label = tk.Label(root, textvariable=current_model, justify=tk.LEFT)
-    current_model_label.grid(row=0, column=0, columnspan=4)
+    current_model_label.grid(row=0, column=0, columnspan=5)
 
     progress_frame = tk.Frame(root, padx=10, pady=5)
-    progress_frame.grid(row=1, column=0, columnspan=4)
+    progress_frame.grid(row=1, column=0, columnspan=5)
 
     progress = ttk.Progressbar(progress_frame, orient='horizontal', length=350, mode='determinate')
-    progress.grid(row=0, column=0, columnspan=3, sticky=tk.E)
+    progress.grid(row=0, column=0, columnspan=4, sticky=tk.E)
 
     progress_label = tk.Label(progress_frame, text="0/0 (0.00%)", justify=tk.CENTER)
-    progress_label.grid(row=0, column=3, sticky=tk.W)
+    progress_label.grid(row=0, column=4, sticky=tk.W)
 
     result_label = tk.Label(root, textvariable=result_text, justify=tk.LEFT)
-    result_label.grid(row=2, column=0, columnspan=4)
+    result_label.grid(row=2, column=0, columnspan=5)
 
     time_limit_frame = tk.Frame(root, padx=10, pady=5)
-    time_limit_frame.grid(row=3, column=0, columnspan=4, sticky=tk.W)
+    time_limit_frame.grid(row=3, column=2, columnspan=1, sticky=tk.W)
 
-    time_limit_label = tk.Label(time_limit_frame, text="最大執行時間 (秒，0表示不限制):")
-    time_limit_label.grid(row=0, column=0, sticky=tk.E, columnspan=2)
+    time_limit_label = tk.Label(time_limit_frame, text="單一模型最大執行時間 (秒，0表示不限制):")
+    time_limit_label.grid(row=0, column=0, sticky=tk.E, columnspan=3)
     
     time_limit_entry = tk.Entry(time_limit_frame, textvariable=time_limit_var, width=10)
-    time_limit_entry.grid(row=0, column=2, sticky=tk.W, columnspan=2)
+    time_limit_entry.grid(row=0, column=3, sticky=tk.W)
 
     button_frame = tk.Frame(root, padx=10, pady=5)
-    button_frame.grid(row=4, column=0, columnspan=4, sticky=tk.W)
+    button_frame.grid(row=4, column=0, columnspan=5, sticky=tk.W)
 
-    button_add_file = tk.Button(button_frame, text="添加模型文件", command=add_file_entry)
+    button_add_file = tk.Button(button_frame, text="添加模型路徑輸入框", command=add_file_entry)
     button_add_file.grid(row=0, column=0, padx=5, pady=5)
 
     button_solve = tk.Button(button_frame, text="求解模型", command=lambda: start_solve_thread())
