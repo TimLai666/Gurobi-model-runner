@@ -141,7 +141,7 @@ def main():
 
     def add_file_entry():
         frame = tk.Frame(root, padx=10, pady=5)
-        frame.grid(row=len(file_entries) + 4, column=0, sticky=tk.W, columnspan=4)
+        frame.grid(row=len(file_entries) + 6, column=0, sticky=tk.W, columnspan=4)
         
         model_files = tk.StringVar()
         file_entries.append(model_files)
@@ -184,6 +184,7 @@ def main():
 
             for i, file_path in enumerate(model_file_paths):
                 model_name = file_path.split("/")[-1]
+                current_model.set(f"正在處理: {model_name}")
                 loop = asyncio.get_event_loop()
                 temp_file = await loop.run_in_executor(None, execute_model_from_file, file_path, time_limit, temp_dir)
                 
@@ -192,13 +193,14 @@ def main():
                 else:
                     result = f"{model_name}: 模型求解失敗"
                 
-                result_text.set(result)
                 progress['value'] = i + 1
 
                 # 更新進度信息
                 progress_label.config(text=f"{i + 1}/{len(model_file_paths)} ({(i + 1) / len(model_file_paths) * 100:.2f}%)")
+                result_text.set(result)
                 await asyncio.sleep(0)  # 让出控制权以保持GUI响应
 
+            current_model.set("所有模型已處理完畢")
             results['data'] = read_temp_files(temp_dir)
             toggle_buttons(state=tk.NORMAL)
             save_button.config(state=tk.NORMAL)
@@ -237,33 +239,45 @@ def main():
 
     # 結果變數
     result_text = tk.StringVar()
-
-    # 建立UI元件
-    result_label = tk.Label(root, textvariable=result_text, justify=tk.LEFT)
-    result_label.grid(row=0, column=0, columnspan=4)
-
-    progress = ttk.Progressbar(root, orient='horizontal', length=350, mode='determinate')
-    progress.grid(row=1, column=0, columnspan=3, sticky=tk.E)
-
-    progress_label = tk.Label(root, text="0/0 (0.00%)", justify=tk.CENTER)
-    progress_label.grid(row=1, column=3, sticky=tk.W)
-
+    current_model = tk.StringVar()
     time_limit_var = tk.StringVar(value="0")
 
-    time_limit_label = tk.Label(root, text="最大執行時間 (秒，0表示不限制):")
-    time_limit_label.grid(row=2, column=0, sticky=tk.E, columnspan=2)
+    # 建立UI元件
+    current_model_label = tk.Label(root, textvariable=current_model, justify=tk.LEFT)
+    current_model_label.grid(row=0, column=0, columnspan=4)
+
+    progress_frame = tk.Frame(root, padx=10, pady=5)
+    progress_frame.grid(row=1, column=0, columnspan=4)
+
+    progress = ttk.Progressbar(progress_frame, orient='horizontal', length=350, mode='determinate')
+    progress.grid(row=0, column=0, columnspan=3, sticky=tk.E)
+
+    progress_label = tk.Label(progress_frame, text="0/0 (0.00%)", justify=tk.CENTER)
+    progress_label.grid(row=0, column=3, sticky=tk.W)
+
+    result_label = tk.Label(root, textvariable=result_text, justify=tk.LEFT)
+    result_label.grid(row=2, column=0, columnspan=4)
+
+    time_limit_frame = tk.Frame(root, padx=10, pady=5)
+    time_limit_frame.grid(row=3, column=0, columnspan=4, sticky=tk.W)
+
+    time_limit_label = tk.Label(time_limit_frame, text="最大執行時間 (秒，0表示不限制):")
+    time_limit_label.grid(row=0, column=0, sticky=tk.E, columnspan=2)
     
-    time_limit_entry = tk.Entry(root, textvariable=time_limit_var, width=10)
-    time_limit_entry.grid(row=2, column=2, sticky=tk.W, columnspan=2)
+    time_limit_entry = tk.Entry(time_limit_frame, textvariable=time_limit_var, width=10)
+    time_limit_entry.grid(row=0, column=2, sticky=tk.W, columnspan=2)
 
-    button_add_file = tk.Button(root, text="添加模型文件", command=add_file_entry)
-    button_add_file.grid(row=3, column=0)
+    button_frame = tk.Frame(root, padx=10, pady=5)
+    button_frame.grid(row=4, column=0, columnspan=4, sticky=tk.W)
 
-    button_solve = tk.Button(root, text="求解模型", command=lambda: start_solve_thread())
-    button_solve.grid(row=3, column=1)
+    button_add_file = tk.Button(button_frame, text="添加模型文件", command=add_file_entry)
+    button_add_file.grid(row=0, column=0, padx=5, pady=5)
 
-    save_button = tk.Button(root, text="保存結果到 Excel", command=save_result_to_excel, state=tk.DISABLED)
-    save_button.grid(row=3, column=2)
+    button_solve = tk.Button(button_frame, text="求解模型", command=lambda: start_solve_thread())
+    button_solve.grid(row=0, column=1, padx=5, pady=5)
+
+    save_button = tk.Button(button_frame, text="保存結果到 Excel", command=save_result_to_excel, state=tk.DISABLED)
+    save_button.grid(row=0, column=2, padx=5, pady=5)
 
     add_file_entry()  # 添加第一個文件輸入框
 
