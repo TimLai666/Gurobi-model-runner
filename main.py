@@ -200,7 +200,7 @@ def main():
                 result_text.set(result)
                 await asyncio.sleep(0)  # 让出控制权以保持GUI响应
 
-            current_model.set("所有模型已處理完畢")
+            current_model.set("所有模型已處理完畢，請記得存檔！")
             results['data'] = read_temp_files(temp_dir)
             toggle_buttons(state=tk.NORMAL)
             save_button.config(state=tk.NORMAL)
@@ -276,7 +276,7 @@ def main():
     button_solve = tk.Button(button_frame, text="求解模型", command=lambda: start_solve_thread())
     button_solve.grid(row=0, column=1, padx=5, pady=5)
 
-    save_button = tk.Button(button_frame, text="保存結果到 Excel", command=save_result_to_excel, state=tk.DISABLED)
+    save_button = tk.Button(button_frame, text="將結果輸出為 Excel 檔（.xlsx）", command=save_result_to_excel, state=tk.DISABLED)
     save_button.grid(row=0, column=2, padx=5, pady=5)
 
     add_file_entry()  # 添加第一個文件輸入框
