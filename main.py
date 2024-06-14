@@ -9,6 +9,7 @@ import asyncio
 import threading
 import tempfile
 import os
+from openpyxl.styles import Font
 
 class CaptureOutput(list):
     """Class to capture stdout and stderr."""
@@ -121,6 +122,13 @@ def save_to_excel(results: dict, filename: str) -> None:
             sheet = writer.sheets[f'Model_{idx}_Log']
             sheet.cell(row=1, column=1, value=f'Model File: {model_name}')
 
+            # 设置 "Time limit reached" 为红色粗体
+            red_bold_font = Font(color="FF0000", bold=True)
+            for row_idx, log_entry in enumerate(data['Log'], start=2):
+                if "Time limit reached" in log_entry:
+                    cell = sheet.cell(row=row_idx + 1, column=1)  # +1 因为日志输出从第2行开始
+                    cell.font = red_bold_font
+
         # 寫入模型編號和文件名對應表
         df_model_info = pd.DataFrame(model_info_data)
         df_model_info.to_excel(writer, sheet_name='Model_Index', index=False)
@@ -189,7 +197,10 @@ def main():
                 temp_file = await loop.run_in_executor(None, execute_model_from_file, file_path, time_limit, temp_dir)
                 
                 if temp_file:
-                    result = f"{model_name}: 模型已解決"
+                    if "Time limit reached" in open(temp_file).read():
+                        result = f"{model_name}: 達到執行時限"
+                    else:
+                        result = f"{model_name}: 模型已解決"
                 else:
                     result = f"{model_name}: 模型求解失敗"
                 
